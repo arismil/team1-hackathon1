@@ -152,8 +152,8 @@ def build_triage_graph() -> Any:
             Return ONLY valid JSON with exactly these fields:
             action (string), risk_level (low or high), steps (array of strings),
             rationale (string).
-            Restarting a service is low risk. Scaling database capacity and rotating
-            signing keys are high risk and require human approval.
+            Restarting a service is high risk. Scaling database capacity and rotating
+            signing keys are also high risk and all require human approval.
 
             Incident state:
             {state!r}
@@ -199,6 +199,7 @@ def build_triage_graph() -> Any:
         }
 
     def request_approval(state: IncidentState) -> dict[str, Any]:
+        print(f"Requesting approval for remediation of {state['incident_id']}")
         decision = interrupt(
             {
                 "message": "High-risk remediation requires human approval.",
