@@ -1,6 +1,12 @@
 from fastapi.testclient import TestClient
 
 from team1_hackathon1.app import app
+from team1_hackathon1.tools import (
+    check_service_health,
+    get_incident_history,
+    get_service_metrics,
+    search_logs,
+)
 
 client = TestClient(app)
 
@@ -63,3 +69,16 @@ def test_invalid_ticket_severity_is_rejected() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_service_tools_normalize_model_generated_nul_character() -> None:
+    service = "payment-service\x00"
+
+    assert "Logs for payment-service:" in search_logs.invoke({"service": service})
+    assert "Metrics for payment-service:" in get_service_metrics.invoke(
+        {"service": service}
+    )
+    assert "Incident history for payment-service:" in get_incident_history.invoke(
+        {"service": service}
+    )
+    assert "payment-service is" in check_service_health.invoke({"service": service})

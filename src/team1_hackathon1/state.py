@@ -1,5 +1,5 @@
 import operator
-from typing import Annotated, Literal, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
 
 Severity = Literal["low", "medium", "high", "critical"]
@@ -27,6 +27,7 @@ class IncidentState(TypedDict):
     severity: Severity | None
 
     evidence: Annotated[list[dict], operator.add]
+    messages: Annotated[list[Any], operator.add]
 
     root_cause: str | None
 

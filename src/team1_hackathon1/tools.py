@@ -29,6 +29,11 @@ def _unknown_service_error(service: str) -> str:
     return f"Error: Unknown service '{service}'. Known services: {', '.join(SERVICES)}."
 
 
+def _normalize_service(service: str) -> str:
+    """Normalize harmless whitespace/control characters from model tool args."""
+    return service.replace("\x00", "").strip()
+
+
 def _apply_remediation(
     action: str, service: str, verb: str, use_default_fallback: bool = False
 ) -> str:
@@ -68,6 +73,7 @@ def _apply_remediation(
 def search_logs(service: str) -> str:
     """Search recent logs for a specific service to identify errors and warnings."""
     try:
+        service = _normalize_service(service)
         if service not in SERVICES:
             return _unknown_service_error(service)
 
@@ -85,6 +91,7 @@ def search_logs(service: str) -> str:
 def get_service_metrics(service: str) -> str:
     """Fetch current operational metrics (CPU, memory, latency, error rate, etc.) for a given service."""
     try:
+        service = _normalize_service(service)
         if service not in SERVICES:
             return _unknown_service_error(service)
 
@@ -129,6 +136,7 @@ def search_knowledge_base(query: str) -> str:
 def get_incident_history(service: str) -> str:
     """Retrieve past incidents recorded for a service, including their root cause and resolution."""
     try:
+        service = _normalize_service(service)
         if service not in SERVICES:
             return _unknown_service_error(service)
 
@@ -153,6 +161,7 @@ def restart_service(service: str) -> str:
     but does not fix problems rooted in configuration or the database -- follow up with
     check_service_health to confirm whether it actually worked."""
     try:
+        service = _normalize_service(service)
         if service not in SERVICES:
             return _unknown_service_error(service)
         return _apply_remediation(
@@ -169,6 +178,7 @@ def restart_service(service: str) -> str:
 def check_service_health(service: str) -> str:
     """Evaluate a service's current metrics against baseline thresholds and report whether it is healthy, degraded, or critical."""
     try:
+        service = _normalize_service(service)
         if service not in SERVICES:
             return _unknown_service_error(service)
 
@@ -209,3 +219,13 @@ def check_service_health(service: str) -> str:
         return f"{service} is {status}: {details}\nFull metrics: {m}"
     except Exception as e:
         return f"Tool execution failed: {str(e)}"
+
+
+# Read-only tools the investigation model is allowed to call. Remediation tools
+# are intentionally excluded until the workflow reaches its approval gate.
+INVESTIGATION_TOOLS = [
+    search_logs,
+    get_service_metrics,
+    search_knowledge_base,
+    get_incident_history,
+]
