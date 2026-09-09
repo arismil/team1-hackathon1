@@ -18,13 +18,6 @@ def _content_text(content: Any) -> str:
     return content if isinstance(content, str) else str(content)
 
 
-def _tool_arguments(tool_call: dict[str, Any]) -> dict[str, Any]:
-    arguments = tool_call.get("args", {})
-    if not isinstance(arguments, dict):
-        raise ValueError(f"Tool call arguments must be an object: {arguments!r}")
-    return arguments
-
-
 def _json_content(raw: str) -> str:
     """Remove an optional Markdown code fence around model-generated JSON."""
     if raw.startswith("```") and raw.endswith("```"):
@@ -72,16 +65,17 @@ def build_triage_graph() -> Any:
         )
         return {"classification": classification}
 
-    investigation_model = model.bind_tools(INVESTIGATION_TOOLS)
-
     def investigate(state: IncidentState) -> dict[str, Any]:
-        """Gather evidence by allowing the LLM to call read-only mock systems."""
-        response = investigation_model.invoke(
+        """Orchestrate dedicated workers for each investigation data source."""
+        response = model.invoke(
             f"""
-            Investigate this IT incident using the available read-only tools.
-            You must call the tools for logs, metrics, knowledge-base guidance,
-            and incident history for the affected service before concluding.
-            Use the exact service name supplied below. Do not execute remediation.
+            You are the investigation orchestrator. Decide which read-only
+            investigation workers to run for this incident. Return ONLY valid JSON:
+            an array of objects with exactly these fields:
+            tool (one of search_logs, get_service_metrics, search_knowledge_base,
+            get_incident_history) and args (an object).
+            Always include logs, metrics, knowledge base, and incident history.
+            Use the exact service name supplied below. Never request remediation.
 
             Incident:
             {state!r}
@@ -90,24 +84,38 @@ def build_triage_graph() -> Any:
 
         evidence: list[dict[str, Any]] = []
         errors: list[str] = []
-        for tool_call in getattr(response, "tool_calls", []):
-            name = tool_call.get("name")
-            tool = next(
-                (
-                    candidate
-                    for candidate in INVESTIGATION_TOOLS
-                    if candidate.name == name
-                ),
-                None,
-            )
+        workers = {candidate.name: candidate for candidate in INVESTIGATION_TOOLS}
+        try:
+            tasks = json.loads(_json_content(_content_text(response.content).strip()))
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Investigation orchestrator returned invalid JSON: {response.content!r}"
+            ) from exc
+
+        if not isinstance(tasks, list):
+            raise ValueError("Investigation orchestrator output must be a JSON array.")
+
+        for task in tasks:
+            if not isinstance(task, dict):
+                errors.append(f"Invalid investigation task: {task!r}")
+                continue
+            name = task.get("tool")
+            arguments = task.get("args", {})
+            if not isinstance(name, str):
+                errors.append(f"Investigation task has invalid tool name: {name!r}")
+                continue
+            tool = workers.get(name)
             if tool is None:
                 errors.append(f"Unknown investigation tool requested: {name!r}")
+                continue
+            if not isinstance(arguments, dict):
+                errors.append(f"{name} arguments must be an object: {arguments!r}")
                 continue
             try:
                 evidence.append(
                     {
                         "tool": name,
-                        "result": tool.invoke(_tool_arguments(tool_call)),
+                        "result": tool.invoke(arguments),
                     }
                 )
             except (TypeError, ValueError, KeyError) as exc:
