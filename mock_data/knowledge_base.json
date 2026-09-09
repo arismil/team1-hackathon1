@@ -1,0 +1,38 @@
+[
+  {
+    "doc_id": "KB-001",
+    "title": "Database Connection Pool Exhaustion",
+    "snippet": "Connection pool exhaustion occurs when active connections reach the configured maximum, typically caused by traffic spikes, slow queries holding connections open, or a connection leak. Short-term mitigation is restarting the affected service to release stale connections; the durable fix is increasing pool size or resolving the underlying slow queries.",
+    "keywords": ["connection pool", "timeout", "database", "exhaustion", "payment"]
+  },
+  {
+    "doc_id": "KB-002",
+    "title": "JWT Signing Key Rotation Procedure",
+    "snippet": "Token validation failures with a signature mismatch usually indicate the token was signed with a key no longer recognized as active, often following an incomplete key rotation. Resolution requires rotating the signing key and ensuring all instances load the updated key set.",
+    "keywords": ["token", "signature", "signing key", "authentication", "jwt", "identity"]
+  },
+  {
+    "doc_id": "KB-003",
+    "title": "Diagnosing Slow Database Queries",
+    "snippet": "Elevated response times with normal CPU and memory usage often point to database-side query degradation rather than application load. Common causes include missing indexes, query plan regressions, or lock contention. Diagnosis should compare query latency against historical baselines before restarting application services.",
+    "keywords": ["query latency", "slow query", "performance", "database", "response time"]
+  },
+  {
+    "doc_id": "KB-004",
+    "title": "Identity Provider Outage Runbook",
+    "snippet": "When login failures rise but the identity provider reports normal latency and health, the issue is more likely local configuration (signing keys, token audience/issuer mismatch) than an IdP-side outage. Verify IdP health metrics before escalating to the identity provider vendor.",
+    "keywords": ["identity provider", "login failure", "idp", "authentication", "outage"]
+  },
+  {
+    "doc_id": "KB-005",
+    "title": "Service Restart Best Practices",
+    "snippet": "Restarting a service clears in-memory state, connection handles, and stuck threads, which resolves transient issues like connection leaks or memory bloat. It does not resolve issues rooted in external dependencies, configuration, or database-side degradation, and should be treated as a low-risk first attempt rather than a guaranteed fix.",
+    "keywords": ["restart", "service health", "mitigation", "low risk"]
+  },
+  {
+    "doc_id": "KB-006",
+    "title": "Scaling Database Connection Capacity",
+    "snippet": "When restarts fail to resolve connection pool exhaustion, increasing the connection pool size or scaling the underlying database resolves sustained high-traffic exhaustion. This action is considered higher risk as it changes resource allocation and should be approved before execution in production environments.",
+    "keywords": ["scale", "connection pool", "database", "capacity", "high risk"]
+  }
+]
