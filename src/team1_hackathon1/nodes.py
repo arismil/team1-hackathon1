@@ -160,8 +160,10 @@ def build_triage_graph() -> Any:
             Return ONLY valid JSON with exactly these fields:
             action (string), risk_level (low or high), steps (array of strings),
             rationale (string).
-            Restarting a service is high risk. Scaling database capacity and rotating
+            Restarting a service is low risk. Scaling database capacity and rotating
             signing keys are also high risk and all require human approval.
+            If retry_count is greater than zero, choose a high-risk action other than
+            restart_service because the previous remediation failed.
 
             Incident state:
             {state!r}
@@ -188,6 +190,14 @@ def build_triage_graph() -> Any:
             isinstance(step, str) for step in steps
         ):
             raise ValueError("Remediation plan steps must be a list of strings.")
+        retry_count = state.get("retry_count", 0)
+        if retry_count > 0:
+            if action == "restart_service":
+                raise ValueError(
+                    "A retry after failed remediation must use a high-risk action."
+                )
+            risk_level = "high"
+            plan["risk_level"] = risk_level
 
         return {
             "remediation_plan": json.dumps(plan),
@@ -200,10 +210,15 @@ def build_triage_graph() -> Any:
         plan = json.loads(state["remediation_plan"] or "{}")
         action = plan["action"]
         result = REMEDIATION_TOOLS[action].invoke({"service": state["service"]})
-        print(f"Executed remediation {action} for {state['service']}: {result}")
+        failed = any(
+            marker in result.lower()
+            for marker in ("did not resolve", "unknown service", "not applicable", "error:")
+        )
         return {
             "execution_result": result,
             "remediation_attempts": [f"{action}: {result}"],
+            "retry_count": state.get("retry_count", 0) + 1,
+            "errors": [f"{action} did not resolve the incident."] if failed else [],
         }
 
     def request_approval(state: IncidentState) -> dict[str, Any]:
@@ -234,6 +249,16 @@ def build_triage_graph() -> Any:
     def route_after_approval(state: IncidentState) -> str:
         return "execute_remediation" if state["approval_status"] == "approved" else END
 
+    def route_after_execution(state: IncidentState) -> str:
+        execution_result = (state["execution_result"] or "").lower()
+        failed = any(
+            marker in execution_result
+            for marker in ("did not resolve", "unknown service", "not applicable", "error:")
+        )
+        if failed and state.get("retry_count", 0) <= 1:
+            return "plan_remediation"
+        return END
+
     graph = StateGraph(IncidentState)
     graph.add_node("classify_severity", classify_severity)
     graph.add_node("categorize_ticket", categorize_ticket)
@@ -256,7 +281,11 @@ def build_triage_graph() -> Any:
             "request_approval": "request_approval",
         },
     )
-    graph.add_edge("execute_remediation", END)
+    graph.add_conditional_edges(
+        "execute_remediation",
+        route_after_execution,
+        {"plan_remediation": "plan_remediation", END: END},
+    )
     graph.add_conditional_edges(
         "request_approval",
         route_after_approval,

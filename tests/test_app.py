@@ -1,6 +1,11 @@
+import json
+
 from fastapi.testclient import TestClient
+from langchain_core.messages import AIMessage
+from langgraph.types import Command
 
 from team1_hackathon1.app import app
+from team1_hackathon1 import nodes
 from team1_hackathon1.tools import (
     check_service_health,
     get_incident_history,
@@ -90,3 +95,101 @@ def test_restart_service_normalizes_zero_width_space() -> None:
 
     assert "Unknown service" not in result
     assert "Restarted payment-service" in result
+
+
+def test_triage_graph_retries_failed_remediation_with_approval(
+    monkeypatch,
+) -> None:
+    replies = iter(
+        [
+            AIMessage(content="high"),
+            AIMessage(content="database"),
+            AIMessage(
+                content=json.dumps(
+                    [
+                        {
+                            "tool": "search_logs",
+                            "args": {"service": "payment-service"},
+                        },
+                        {
+                            "tool": "get_service_metrics",
+                            "args": {"service": "payment-service"},
+                        },
+                        {
+                            "tool": "search_knowledge_base",
+                            "args": {"query": "database timeout payment-service"},
+                        },
+                        {
+                            "tool": "get_incident_history",
+                            "args": {"service": "payment-service"},
+                        },
+                    ]
+                )
+            ),
+            AIMessage(content="Database connection pool exhaustion."),
+            AIMessage(
+                content=json.dumps(
+                    {
+                        "action": "restart_service",
+                        "risk_level": "low",
+                        "steps": ["Restart the service"],
+                        "rationale": "Release stale connections.",
+                    }
+                )
+            ),
+            AIMessage(
+                content=json.dumps(
+                    {
+                        "action": "scale_database",
+                        "risk_level": "high",
+                        "steps": ["Increase database capacity"],
+                        "rationale": "The restart did not resolve pool exhaustion.",
+                    }
+                )
+            ),
+        ]
+    )
+
+    class MockLLM:
+        def invoke(self, prompt):
+            assert isinstance(prompt, str)
+            return next(replies)
+
+    monkeypatch.setattr(nodes, "model", MockLLM())
+    graph = nodes.build_triage_graph()
+    initial_state = {
+        "incident_id": "TKT-INTEGRATION-RETRY",
+        "service": "payment-service",
+        "description": "Payments are failing.",
+        "error": "Database connection timeout.",
+        "classification": None,
+        "severity": None,
+        "evidence": [],
+        "messages": [],
+        "root_cause": None,
+        "remediation_plan": None,
+        "risk_level": None,
+        "approval_status": None,
+        "execution_result": None,
+        "verification_result": None,
+        "remediation_attempts": [],
+        "errors": [],
+        "retry_count": 0,
+        "final_status": None,
+        "final_report": None,
+    }
+    config = {"configurable": {"thread_id": "TKT-INTEGRATION-RETRY"}}
+
+    interrupted = graph.invoke(initial_state, config=config)
+
+    assert interrupted["retry_count"] == 1
+    assert interrupted["risk_level"] == "high"
+    assert interrupted["approval_status"] == "pending"
+    assert interrupted["__interrupt__"][0].value["risk_level"] == "high"
+    assert json.loads(interrupted["remediation_plan"])["action"] == "scale_database"
+
+    completed = graph.invoke(Command(resume=True), config=config)
+
+    assert completed["approval_status"] == "approved"
+    assert completed["retry_count"] == 2
+    assert "This resolved the root cause." in completed["execution_result"]

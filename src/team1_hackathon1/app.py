@@ -5,15 +5,18 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from langgraph.types import Command
 from pydantic import BaseModel
+from prometheus_client import make_asgi_app
 
 from team1_hackathon1.models import SupportTicket
 from team1_hackathon1.nodes import build_triage_graph
+from team1_hackathon1.observability import langfuse_callbacks, observe_graph_run
 
 app = FastAPI(
     title="team1-hackathon1",
     version="0.1.0",
     description="Tiny FastAPI service scaffolded for Dockerized deployment.",
 )
+app.mount("/metrics", make_asgi_app())
 
 triage_graph = build_triage_graph()
 _tickets: dict[str, SupportTicket] = {}
@@ -44,10 +47,19 @@ def create_ticket(ticket: SupportTicket) -> SupportTicket:
         error=ticket.error,
     )
     _tickets[ticket.incident_id] = stored_ticket
-    triage_graph.invoke(
-        stored_ticket.model_dump(),
-        config={"configurable": {"thread_id": stored_ticket.incident_id}},
-    )
+    with observe_graph_run():
+        triage_graph.invoke(
+            stored_ticket.model_dump(),
+            config={
+                "configurable": {"thread_id": stored_ticket.incident_id},
+                "callbacks": langfuse_callbacks(),
+                "metadata": {
+                    "incident_id": stored_ticket.incident_id,
+                    "service": stored_ticket.service,
+                },
+                "tags": ["incident-triage"],
+            },
+        )
     return stored_ticket
 
 
@@ -69,10 +81,16 @@ def approve_remediation(ticket_id: str, decision: ApprovalDecision) -> dict[str,
     if ticket_id not in _tickets:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    result = triage_graph.invoke(
-        Command(resume=decision.approved),
-        config={"configurable": {"thread_id": ticket_id}},
-    )
+    with observe_graph_run():
+        result = triage_graph.invoke(
+            Command(resume=decision.approved),
+            config={
+                "configurable": {"thread_id": ticket_id},
+                "callbacks": langfuse_callbacks(),
+                "metadata": {"incident_id": ticket_id},
+                "tags": ["incident-remediation-approval"],
+            },
+        )
     return {
         "incident_id": ticket_id,
         "approval_status": result.get("approval_status"),
