@@ -19,6 +19,7 @@ INCIDENT_HISTORY = _load("mock_data/incident_history.json")
 KNOWLEDGE_BASE = _load("mock_data/knowledge_base.json")
 
 SERVICES = sorted(k for k in LOGS if k != "_default")
+_INVISIBLE_SERVICE_CHARS = "\x00\u200b\u200c\u200d\ufeff"
 
 
 def _format_log_entry(entry: dict) -> str:
@@ -30,8 +31,8 @@ def _unknown_service_error(service: str) -> str:
 
 
 def _normalize_service(service: str) -> str:
-    """Normalize harmless whitespace/control characters from model tool args."""
-    return service.replace("\x00", "").strip()
+    """Normalize harmless invisible characters from model tool arguments."""
+    return service.translate(str.maketrans("", "", _INVISIBLE_SERVICE_CHARS)).strip()
 
 
 def _apply_remediation(

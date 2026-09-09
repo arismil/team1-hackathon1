@@ -192,6 +192,7 @@ def build_triage_graph() -> Any:
         plan = json.loads(state["remediation_plan"] or "{}")
         action = plan["action"]
         result = REMEDIATION_TOOLS[action].invoke({"service": state["service"]})
+        print(f"Executed remediation {action} for {state['service']}: {result}")
         return {
             "execution_result": result,
             "remediation_attempts": [f"{action}: {result}"],

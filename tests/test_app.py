@@ -5,6 +5,7 @@ from team1_hackathon1.tools import (
     check_service_health,
     get_incident_history,
     get_service_metrics,
+    restart_service,
     search_logs,
 )
 
@@ -82,3 +83,10 @@ def test_service_tools_normalize_model_generated_nul_character() -> None:
         {"service": service}
     )
     assert "payment-service is" in check_service_health.invoke({"service": service})
+
+
+def test_restart_service_normalizes_zero_width_space() -> None:
+    result = restart_service.invoke({"service": "payment-service\u200b"})
+
+    assert "Unknown service" not in result
+    assert "Restarted payment-service" in result
