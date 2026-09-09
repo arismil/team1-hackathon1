@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from langgraph.types import Command
+from pydantic import BaseModel
 
 from team1_hackathon1.models import SupportTicket
 from team1_hackathon1.nodes import build_triage_graph
@@ -15,6 +17,10 @@ app = FastAPI(
 
 triage_graph = build_triage_graph()
 _tickets: dict[str, SupportTicket] = {}
+
+
+class ApprovalDecision(BaseModel):
+    approved: bool
 
 
 @app.get("/")
@@ -38,7 +44,10 @@ def create_ticket(ticket: SupportTicket) -> SupportTicket:
         error=ticket.error,
     )
     _tickets[ticket.incident_id] = stored_ticket
-    triage_graph.invoke(stored_ticket.model_dump())
+    triage_graph.invoke(
+        stored_ticket.model_dump(),
+        config={"configurable": {"thread_id": stored_ticket.incident_id}},
+    )
     return stored_ticket
 
 
@@ -53,6 +62,23 @@ def get_ticket(ticket_id: str) -> SupportTicket:
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket
+
+
+@app.post("/tickets/{ticket_id}/approval")
+def approve_remediation(ticket_id: str, decision: ApprovalDecision) -> dict[str, Any]:
+    if ticket_id not in _tickets:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    result = triage_graph.invoke(
+        Command(resume=decision.approved),
+        config={"configurable": {"thread_id": ticket_id}},
+    )
+    return {
+        "incident_id": ticket_id,
+        "approval_status": result.get("approval_status"),
+        "execution_result": result.get("execution_result"),
+        "remediation_plan": result.get("remediation_plan"),
+    }
 
 
 def main() -> None:

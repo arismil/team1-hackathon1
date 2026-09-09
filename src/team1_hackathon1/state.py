@@ -1,6 +1,8 @@
 import operator
 from typing import Annotated, Any, Literal, TypedDict
 
+from pydantic import BaseModel, Field, Field
+
 
 Severity = Literal["low", "medium", "high", "critical"]
 RiskLevel = Literal["low", "medium", "high"]
@@ -15,6 +17,21 @@ FinalStatus = Literal[
     "failed",
     "escalated",
 ]
+
+
+class Plan(BaseModel):
+    steps: list[str] = Field(
+        description="2-4 ordered, concrete steps needed to solve the ticket"
+    )
+
+
+class Replan(BaseModel):
+    done: bool = Field(
+        description="True if the ticket is resolved; False if more steps are needed"
+    )
+    remaining_steps: list[str] = Field(
+        description="Updated remaining steps if not done; [] if done"
+    )
 
 
 class IncidentState(TypedDict):

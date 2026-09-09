@@ -221,6 +221,38 @@ def check_service_health(service: str) -> str:
         return f"Tool execution failed: {str(e)}"
 
 
+@tool
+def scale_database(service: str) -> str:
+    """Increase database capacity. This is a high-risk production change."""
+    try:
+        service = _normalize_service(service)
+        if service not in SERVICES:
+            return _unknown_service_error(service)
+        return _apply_remediation(
+            "scale_database",
+            service,
+            f"Scaled database capacity for {service}",
+        )
+    except Exception as e:
+        return f"Tool execution failed: {str(e)}"
+
+
+@tool
+def rotate_signing_key(service: str) -> str:
+    """Rotate authentication signing keys. This is a high-risk production change."""
+    try:
+        service = _normalize_service(service)
+        if service not in SERVICES:
+            return _unknown_service_error(service)
+        return _apply_remediation(
+            "rotate_signing_key",
+            service,
+            f"Rotated signing key for {service}",
+        )
+    except Exception as e:
+        return f"Tool execution failed: {str(e)}"
+
+
 # Read-only tools the investigation model is allowed to call. Remediation tools
 # are intentionally excluded until the workflow reaches its approval gate.
 INVESTIGATION_TOOLS = [
@@ -229,3 +261,9 @@ INVESTIGATION_TOOLS = [
     search_knowledge_base,
     get_incident_history,
 ]
+
+REMEDIATION_TOOLS = {
+    "restart_service": restart_service,
+    "scale_database": scale_database,
+    "rotate_signing_key": rotate_signing_key,
+}
