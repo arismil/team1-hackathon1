@@ -1,22 +1,20 @@
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
-PRIORITIES = {"low", "medium", "high", "critical"}
+SEVERITIES = {"low", "medium", "high", "critical"}
 
 
 class SupportTicket(BaseModel):
     # Validates types, applies Field constraints (gt=0), and custom validators
-    ticket_id: str
-    issue: str
-    priority: str = "medium"
-    sla_minutes: int = Field(default=60, gt=0, description="Minutes until SLA breach")
-    tags: list[str] = Field(default_factory=list)
-    assignee: str | None = None
+    incident_id: str
+    service: str
+    description: str
+    severity: str = "medium"
 
-    @field_validator("priority")  # Custom validation for priority enum
+    @field_validator("severity")  # Custom validation for severity enum
     @classmethod
-    def priority_must_be_known(cls, value: str) -> str:
-        if value not in PRIORITIES:
+    def severity_must_be_known(cls, value: str) -> str:
+        if value not in SEVERITIES:
             raise ValueError(
-                f"priority must be one of {sorted(PRIORITIES)}, got {value!r}"
+                f"severity must be one of {sorted(SEVERITIES)}, got {value!r}"
             )
         return value
