@@ -1,0 +1,36 @@
+{
+  "payment-service": {
+    "cpu_pct": 45,
+    "memory_pct": 58,
+    "response_time_ms": 3100,
+    "error_rate_pct": 18,
+    "db_connection_pool_pct": 100,
+    "db_query_latency_ms": 640
+  },
+  "identity-service": {
+    "cpu_pct": 28,
+    "memory_pct": 39,
+    "response_time_ms": 310,
+    "error_rate_pct": 21,
+    "token_validation_error_rate_pct": 24,
+    "identity_provider_latency_ms": 112,
+    "db_connection_pool_pct": 30,
+    "db_query_latency_ms": 85
+  },
+  "order-service": {
+    "cpu_pct": 41,
+    "memory_pct": 54,
+    "response_time_ms": 4800,
+    "error_rate_pct": 3,
+    "db_connection_pool_pct": 72,
+    "db_query_latency_ms": 3950
+  },
+  "_default": {
+    "cpu_pct": 25,
+    "memory_pct": 40,
+    "response_time_ms": 250,
+    "error_rate_pct": 1,
+    "db_connection_pool_pct": 20,
+    "db_query_latency_ms": 40
+  }
+}

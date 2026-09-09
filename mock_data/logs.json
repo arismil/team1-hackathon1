@@ -1,0 +1,30 @@
+{
+  "payment-service": [
+    {"timestamp": "2026-09-09T09:12:03Z", "level": "WARN", "message": "Database connection pool utilization at 92%"},
+    {"timestamp": "2026-09-09T09:13:47Z", "level": "ERROR", "message": "Payment transaction failed: could not acquire DB connection (timeout after 5000ms)"},
+    {"timestamp": "2026-09-09T09:14:02Z", "level": "ERROR", "message": "Database connection pool exhausted: 100/100 connections in use"},
+    {"timestamp": "2026-09-09T09:14:15Z", "level": "ERROR", "message": "Payment transaction failed: could not acquire DB connection (timeout after 5000ms)"},
+    {"timestamp": "2026-09-09T09:15:30Z", "level": "WARN", "message": "Retry queue backlog growing for payment-service"},
+    {"timestamp": "2026-09-09T09:16:01Z", "level": "ERROR", "message": "Database connection pool exhausted: 100/100 connections in use"}
+  ],
+  "identity-service": [
+    {"timestamp": "2026-09-09T09:05:11Z", "level": "ERROR", "message": "Token validation failed: invalid signature"},
+    {"timestamp": "2026-09-09T09:05:44Z", "level": "ERROR", "message": "Login attempt failed for user_id=48213: token validation error"},
+    {"timestamp": "2026-09-09T09:06:02Z", "level": "WARN", "message": "Signing key ID mismatch: token signed with key 'key-2025-11', active key is 'key-2026-06'"},
+    {"timestamp": "2026-09-09T09:06:30Z", "level": "ERROR", "message": "Token validation failed: invalid signature"},
+    {"timestamp": "2026-09-09T09:07:15Z", "level": "INFO", "message": "Identity provider health check: OK, latency 112ms"},
+    {"timestamp": "2026-09-09T09:08:00Z", "level": "ERROR", "message": "Login attempt failed for user_id=90211: token validation error"}
+  ],
+  "order-service": [
+    {"timestamp": "2026-09-09T09:20:05Z", "level": "WARN", "message": "Query execution time exceeded threshold: 4210ms (query: get_order_details)"},
+    {"timestamp": "2026-09-09T09:21:12Z", "level": "WARN", "message": "Slow query detected: SELECT * FROM orders WHERE customer_id = ? (4400ms)"},
+    {"timestamp": "2026-09-09T09:22:00Z", "level": "INFO", "message": "CPU utilization normal: 41%"},
+    {"timestamp": "2026-09-09T09:22:40Z", "level": "WARN", "message": "Response time degraded: 4.8s average over last 5 minutes"},
+    {"timestamp": "2026-09-09T09:23:10Z", "level": "WARN", "message": "Query execution time exceeded threshold: 4650ms (query: list_order_items)"},
+    {"timestamp": "2026-09-09T09:24:00Z", "level": "INFO", "message": "Memory utilization normal: 54%"}
+  ],
+  "_default": [
+    {"timestamp": "2026-09-09T09:00:00Z", "level": "INFO", "message": "No anomalies detected in recent log window"},
+    {"timestamp": "2026-09-09T09:01:00Z", "level": "INFO", "message": "Service operating within normal parameters"}
+  ]
+}
