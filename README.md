@@ -11,7 +11,7 @@ docker compose up --build
 
 - FastAPI: http://localhost:8000
 - Prometheus: http://localhost:9090
-- Grafana: http://localhost:3000 (`admin` / `admin` by default)
+- Grafana: http://localhost:3002 (`admin` / `admin` by default)
 
 The application exposes Prometheus metrics at `/metrics`. Langfuse tracing is
 enabled when `LANGFUSE_TRACING_ENABLED=true` and
