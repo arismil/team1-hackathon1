@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 
 from team1_hackathon1.models import SupportTicket
+from team1_hackathon1.nodes import build_triage_graph
 
 app = FastAPI(
     title="team1-hackathon1",
@@ -12,6 +13,7 @@ app = FastAPI(
     description="Tiny FastAPI service scaffolded for Dockerized deployment.",
 )
 
+triage_graph = build_triage_graph()
 _tickets: dict[str, SupportTicket] = {}
 
 
@@ -36,6 +38,7 @@ def create_ticket(ticket: SupportTicket) -> SupportTicket:
         error=ticket.error,
     )
     _tickets[ticket.incident_id] = stored_ticket
+    triage_graph.invoke(stored_ticket.model_dump())
     return stored_ticket
 
 
