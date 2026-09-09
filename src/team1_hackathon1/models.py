@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
-SEVERITIES = {"low", "medium", "high", "critical"}
+SEVERITIES = {"low", "medium", "high", "critical", "unknown"}
 
 
 class SupportTicket(BaseModel):
@@ -9,6 +9,7 @@ class SupportTicket(BaseModel):
     service: str
     description: str
     severity: str = "medium"
+    error: str
 
     @field_validator("severity")  # Custom validation for severity enum
     @classmethod
