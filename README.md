@@ -12,9 +12,10 @@ docker compose up --build
 - FastAPI: http://localhost:8000
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3002 (`admin` / `admin` by default)
+- Langfuse: http://localhost:3003 (`admin@example.com` / `admin` by default)
 
 The application exposes Prometheus metrics at `/metrics`. Langfuse tracing is
-enabled when `LANGFUSE_TRACING_ENABLED=true` and
-`LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` are set in the environment. The
-default Langfuse host is
-`https://cloud.langfuse.com`; set `LANGFUSE_HOST` for another deployment.
+Langfuse runs locally in Docker with PostgreSQL, ClickHouse, Redis, and MinIO.
+The app sends traces to the internal `langfuse-web` service. This local stack
+uses more containers than the API-only setup because Langfuse requires these
+storage and queue services.

@@ -7,6 +7,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt
 
 from team1_hackathon1.llm import model
+from team1_hackathon1.observability import trace_node_state
 from team1_hackathon1.state import IncidentState
 from team1_hackathon1.tools import INVESTIGATION_TOOLS, REMEDIATION_TOOLS
 
@@ -260,13 +261,23 @@ def build_triage_graph() -> Any:
         return END
 
     graph = StateGraph(IncidentState)
-    graph.add_node("classify_severity", classify_severity)
-    graph.add_node("categorize_ticket", categorize_ticket)
-    graph.add_node("investigate", investigate)
-    graph.add_node("diagnose", diagnose)
-    graph.add_node("plan_remediation", plan_remediation)
-    graph.add_node("execute_remediation", execute_remediation)
-    graph.add_node("request_approval", request_approval)
+    graph.add_node(
+        "classify_severity", trace_node_state("classify_severity", classify_severity)
+    )
+    graph.add_node(
+        "categorize_ticket", trace_node_state("categorize_ticket", categorize_ticket)
+    )
+    graph.add_node("investigate", trace_node_state("investigate", investigate))
+    graph.add_node("diagnose", trace_node_state("diagnose", diagnose))
+    graph.add_node(
+        "plan_remediation", trace_node_state("plan_remediation", plan_remediation)
+    )
+    graph.add_node(
+        "execute_remediation", trace_node_state("execute_remediation", execute_remediation)
+    )
+    graph.add_node(
+        "request_approval", trace_node_state("request_approval", request_approval)
+    )
 
     graph.add_edge(START, "classify_severity")
     graph.add_edge("classify_severity", "categorize_ticket")
