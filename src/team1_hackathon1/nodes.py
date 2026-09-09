@@ -208,12 +208,18 @@ def build_triage_graph() -> Any:
         }
 
     def execute_remediation(state: IncidentState) -> dict[str, Any]:
+        print(f"Executing remediation for {state['incident_id']}")
         plan = json.loads(state["remediation_plan"] or "{}")
         action = plan["action"]
         result = REMEDIATION_TOOLS[action].invoke({"service": state["service"]})
         failed = any(
             marker in result.lower()
-            for marker in ("did not resolve", "unknown service", "not applicable", "error:")
+            for marker in (
+                "did not resolve",
+                "unknown service",
+                "not applicable",
+                "error:",
+            )
         )
         return {
             "execution_result": result,
@@ -254,7 +260,12 @@ def build_triage_graph() -> Any:
         execution_result = (state["execution_result"] or "").lower()
         failed = any(
             marker in execution_result
-            for marker in ("did not resolve", "unknown service", "not applicable", "error:")
+            for marker in (
+                "did not resolve",
+                "unknown service",
+                "not applicable",
+                "error:",
+            )
         )
         if failed and state.get("retry_count", 0) <= 1:
             return "plan_remediation"
@@ -273,7 +284,8 @@ def build_triage_graph() -> Any:
         "plan_remediation", trace_node_state("plan_remediation", plan_remediation)
     )
     graph.add_node(
-        "execute_remediation", trace_node_state("execute_remediation", execute_remediation)
+        "execute_remediation",
+        trace_node_state("execute_remediation", execute_remediation),
     )
     graph.add_node(
         "request_approval", trace_node_state("request_approval", request_approval)
