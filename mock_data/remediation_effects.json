@@ -1,0 +1,43 @@
+{
+  "restart_service": {
+    "payment-service": {
+      "resolves_root_cause": false,
+      "metric_changes": {"db_connection_pool_pct": 95, "error_rate_pct": 15, "response_time_ms": 2800},
+      "note": "Restart briefly frees stale connections but the pool refills within minutes under sustained load; root cause unresolved."
+    },
+    "identity-service": {
+      "resolves_root_cause": false,
+      "metric_changes": {"token_validation_error_rate_pct": 23},
+      "note": "Restart does not reload a corrected signing key; validation failures persist."
+    },
+    "order-service": {
+      "resolves_root_cause": false,
+      "metric_changes": {"response_time_ms": 4200, "db_query_latency_ms": 3600},
+      "note": "Minor improvement from cleared caches/connections, but query-level degradation remains."
+    },
+    "_default": {
+      "resolves_root_cause": true,
+      "metric_changes": {"error_rate_pct": 1, "response_time_ms": 260},
+      "note": "Generic transient issue cleared by restart."
+    }
+  },
+  "scale_database": {
+    "payment-service": {
+      "resolves_root_cause": true,
+      "metric_changes": {"db_connection_pool_pct": 42, "error_rate_pct": 2, "response_time_ms": 310},
+      "note": "Increased connection pool capacity resolves sustained exhaustion."
+    },
+    "order-service": {
+      "resolves_root_cause": true,
+      "metric_changes": {"db_query_latency_ms": 210, "response_time_ms": 340},
+      "note": "Added capacity and indexing resolve query degradation."
+    }
+  },
+  "rotate_signing_key": {
+    "identity-service": {
+      "resolves_root_cause": true,
+      "metric_changes": {"token_validation_error_rate_pct": 1, "error_rate_pct": 2},
+      "note": "New signing key propagated to all instances; validation failures cease."
+    }
+  }
+}

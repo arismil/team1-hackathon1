@@ -1,0 +1,27 @@
+{
+  "payment-service": [
+    {
+      "incident_id": "INC-0871",
+      "date": "2026-07-14",
+      "root_cause": "Database connection pool exhaustion during a promotional traffic spike",
+      "resolution": "Increased connection pool size from 60 to 100"
+    }
+  ],
+  "identity-service": [
+    {
+      "incident_id": "INC-0902",
+      "date": "2026-08-02",
+      "root_cause": "Signing key expired without rotation, causing token validation failures",
+      "resolution": "Rotated signing key and updated key distribution to all instances"
+    }
+  ],
+  "order-service": [
+    {
+      "incident_id": "INC-0755",
+      "date": "2026-06-30",
+      "root_cause": "Missing index on orders table causing full table scans under load",
+      "resolution": "Added composite index on (customer_id, created_at)"
+    }
+  ],
+  "_default": []
+}
