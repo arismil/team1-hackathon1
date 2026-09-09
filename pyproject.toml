@@ -1,0 +1,29 @@
+[project]
+name = "team1-hackathon1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Aris Miletis", email = "arismiletis@outlook.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[standard]>=0.141.1",
+    "langchain>=1.4.0",
+    "langchain-core>=1.6.2",
+    "langchain-openai>=1.6.1",
+    "langgraph>=1.2.11",
+    "python-dotenv>=1.2.3",
+]
+
+[project.scripts]
+team1-hackathon1 = "team1_hackathon1:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
